@@ -22,10 +22,15 @@ defmodule Dyndns.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      # Route 53 reporting
       {:aws, "~> 0.13.0"},
+      # WAN lookup
       {:hackney, "~> 1.18"},
       {:httpoison, "~> 2.1"},
-      {:jason, "~> 1.4"}
+
+      # admin API
+      {:jason, "~> 1.4"},
+      {:bandit, "~> 1.0-pre"}
     ]
   end
 end

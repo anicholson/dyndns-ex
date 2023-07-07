@@ -8,7 +8,8 @@ defmodule Dyndns.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Dyndns.Wan, []}
+      {Dyndns.Wan, []},
+      {Bandit, plug: Dyndns.Admin.Plug}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

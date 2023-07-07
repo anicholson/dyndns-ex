@@ -19,4 +19,8 @@ defmodule Dyndns do
   def wan_ip do
     GenServer.call Dyndns.Wan, :update
   end
+
+  def wan_state do
+    GenServer.call Dyndns.Wan, :state
+  end
 end

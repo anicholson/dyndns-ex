@@ -33,7 +33,7 @@ defmodule Dyndns.Wan do
           diff = 60 * (state.updates_since_last_change + 1)
           next_update = DateTime.add(now, diff, :second)
           new_state = %{state | updates_since_last_change: state.updates_since_last_change + 1 , next_update: next_update}
-          Logger.info("IP unchanged, next update in #{next_update - now} seconds")
+          Logger.info("IP unchanged, next update in #{DateTime.diff(next_update, now)} seconds")
           {:reply, state.ip, new_state}
 
         false ->
@@ -43,5 +43,9 @@ defmodule Dyndns.Wan do
           {:reply, ip, new_state}
       end
     end
+  end
+
+  def handle_call(:state, _from, state) do
+    {:reply, state, state}
   end
 end
