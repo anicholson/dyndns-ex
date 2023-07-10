@@ -24,3 +24,6 @@ dyndns-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Environment variables
+.envrc

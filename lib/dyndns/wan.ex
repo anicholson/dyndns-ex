@@ -25,7 +25,7 @@ defmodule Dyndns.Wan do
 
     _ ->
       Logger.info("Updating IP")
-      {:ok, response} = HTTPoison.get("https://api.ipify.org", headers)
+      {:ok, response} = HTTPoison.get(wan_ip_server(), headers)
       ip = response.body
 
       case ip == state.ip do
@@ -47,5 +47,9 @@ defmodule Dyndns.Wan do
 
   def handle_call(:state, _from, state) do
     {:reply, state, state}
+  end
+
+  defp wan_ip_server do
+    Application.get_env(:dyndns, :wan_ip_server)
   end
 end

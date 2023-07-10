@@ -9,6 +9,7 @@ defmodule Dyndns.Application do
   def start(_type, _args) do
     children = [
       {Dyndns.Wan, []},
+      {Dyndns.Amazon, {Dyndns.hostname(), Dyndns.aws_config()}},
       {Bandit, plug: Dyndns.Admin.Plug}
     ]
 
