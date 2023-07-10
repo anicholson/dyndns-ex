@@ -29,7 +29,7 @@ defmodule Dyndns.Amazon do
 
     client = AWS.Client.create(aws.access_key_id, aws.secret_access_key, aws.region)
 
-    {:ok, %{config: aws, client: client, hostname: hostname, ip: nil}}
+    {:ok, %{config: aws, client: client, hostname: hostname, ip: nil, last_lookup: nil}}
   end
 
   def handle_call(:lookup, _from, s) do
@@ -42,9 +42,9 @@ defmodule Dyndns.Amazon do
         %{client: client, config: %{hosted_zone_id: hosted_zone_id}, hostname: hostname} = s
 
         case lookup_ip(client, hosted_zone_id, hostname) do
-          {:ok, %{ip: ip}} ->
+          {:ok, %{ip: ip, raw: raw}} ->
             Logger.info("Found IP: #{ip}")
-            new_state = Map.merge(s, %{ip: ip})
+            new_state = Map.merge(s, %{ip: ip, last_lookup: raw})
             {:reply, ip, new_state}
 
           {:error, reason} ->
@@ -52,6 +52,14 @@ defmodule Dyndns.Amazon do
             {:reply, nil, s}
         end
     end
+  end
+
+  def handle_call(:last_lookup, _from, s) do
+    {:reply, s[:last_lookup], s}
+  end
+
+  def handle_cast(:new_ip, _from, s) do
+    # TODO: create a record set and upload to Route53
   end
 
   defp lookup_ip(client, zone_id, hostname) do
@@ -70,7 +78,8 @@ defmodule Dyndns.Amazon do
         {:ok,
          %{
            ip: get_in(record_set, ["ResourceRecords", "ResourceRecord", "Value"]),
-           ttl: get_in(record_set, ["TTL"])
+           ttl: get_in(record_set, ["TTL"]),
+           raw: record_set
          }}
 
       _ ->
@@ -82,5 +91,9 @@ defmodule Dyndns.Amazon do
     Enum.find(record_sets, fn record_set ->
       record_set["Name"] == "#{hostname}." and record_set["Type"] == "A"
     end)
+  end
+
+  defp update_record(record_set, new_value) do
+    put_in(record_set, ["ResourceRecords", "ResourceRecord", "Value"], new_value)
   end
 end
