@@ -1,20 +1,7 @@
 defmodule Dyndns do
   @moduledoc """
-  Documentation for `Dyndns`.
+  Helper functions for debugging and testing during development.
   """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Dyndns.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
 
   def wan_ip do
     GenServer.call Dyndns.Wan, :update

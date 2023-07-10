@@ -1,4 +1,17 @@
 defmodule Dyndns.Amazon do
+  @moduledoc """
+  Handles communication between dyndns and AWS's Route53 service.
+
+  This module is a GenServer that is started by the application supervisor.
+  When this module starts, it will initialize the AWS client using the configuration
+  provided in `config/runtime.exs`.
+
+  When calling this module, you can ask it to:
+    * lookup the hosted zone ID for the configured hostname (see `config/runtime.exs`)
+
+  When casting this module, you can ask it to:
+    * update the IP address for the configured hostname (see `config/runtime.exs`)
+  """
   require Logger
   use GenServer
 

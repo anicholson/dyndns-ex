@@ -30,7 +30,10 @@ defmodule Dyndns.MixProject do
 
       # admin API
       {:jason, "~> 1.4"},
-      {:bandit, "~> 1.0-pre"}
+      {:bandit, "~> 1.0-pre"},
+
+      # dev stuff
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
     ]
   end
 end

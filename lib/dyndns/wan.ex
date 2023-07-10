@@ -1,11 +1,27 @@
 defmodule Dyndns.Wan do
+  @moduledoc """
+  Looks up the WAN IP address for the running system.
+
+  This module is a GenServer that is started by the application supervisor.
+  When this module starts, it will initialize an HTTP client.
+
+  When calling this module, you can ask it to:
+    * `:update` the IP address by making a request to an external service (currently static, see `config/confix.exs`)
+    * `:state` the current state of the module (for visibility purposes, see `Dyndns.Admin`)
+  """
   require Logger
   use GenServer
+
+  @typedoc """
+  The state of the WAN IP module.
+  """
+  @type state :: %{ip: String.t() | nil, next_update: DateTime.t(), updates_since_last_change: non_neg_integer()}
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  @spec init(nil) :: {:ok, state()}
   def init(nil) do
     HTTPoison.start()
     {:ok, %{ip: nil, next_update: DateTime.utc_now(), updates_since_last_change: 0}}

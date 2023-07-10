@@ -1,6 +1,12 @@
 defmodule Dyndns.Admin do
+  @moduledoc """
+  Provides a very simple JSON admin API for inspecting the application state.
+
+  Listening on port 4000 by default (not currently configurable)
+  """
   alias Plug.Conn
   defmodule Plug do
+    @moduledoc false
     import Conn
 
     def init(opts), do: opts
