@@ -23,7 +23,9 @@ defmodule Dyndns.MixProject do
   defp deps do
     [
       # Route 53 reporting
-      {:aws, "~> 0.13.0"},
+      {:ex_aws, "~> 2.4"},
+      {:ex_aws_route53, "~> 2.0"},
+
       # WAN lookup
       {:hackney, "~> 1.18"},
       {:httpoison, "~> 2.1"},
@@ -33,7 +35,7 @@ defmodule Dyndns.MixProject do
       {:bandit, "~> 1.0-pre"},
 
       # dev stuff
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 end

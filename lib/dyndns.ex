@@ -4,19 +4,15 @@ defmodule Dyndns do
   """
 
   def wan_ip do
-    GenServer.call Dyndns.Wan, :update
+    GenServer.call(Dyndns.Wan, :update)
   end
 
   def wan_state do
-    GenServer.call Dyndns.Wan, :state
+    GenServer.call(Dyndns.Wan, :state)
   end
 
-  def aws_config do
-    Application.get_env(:dyndns, :aws)
-  end
-
-  def lookup_zone do
-    GenServer.call Dyndns.Amazon, :lookup
+  def lookup_record do
+    GenServer.call(Dyndns.Amazon, :lookup)
   end
 
   def hostname do

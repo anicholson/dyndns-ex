@@ -22,14 +22,8 @@ defmodule Dyndns.Amazon do
   @type t :: %{access_key_id: String.t(), secret_access_key: String.t(), region: String.t()}
 
   @spec init({String.t(), t()}) :: {:ok, any()}
-  def init({hostname, aws}) do
-    Logger.warn(
-      "Initializing AWS: [hostname = #{hostname}, access_key = #{aws.access_key_id}, region = #{aws.region}]"
-    )
-
-    client = AWS.Client.create(aws.access_key_id, aws.secret_access_key, aws.region)
-
-    {:ok, %{config: aws, client: client, hostname: hostname, ip: nil, last_lookup: nil}}
+  def init({hostname}) do
+    {:ok, %{hostname: hostname, ip: nil, last_lookup: nil}}
   end
 
   def handle_call(:lookup, _from, s) do
@@ -39,9 +33,9 @@ defmodule Dyndns.Amazon do
 
       _ ->
         Logger.info("Looking up hostname")
-        %{client: client, config: %{hosted_zone_id: hosted_zone_id}, hostname: hostname} = s
+        %{config: %{hosted_zone_id: hosted_zone_id}, hostname: hostname} = s
 
-        case lookup_ip(client, hosted_zone_id, hostname) do
+        case lookup_ip(hosted_zone_id, hostname) do
           {:ok, %{ip: ip, raw: raw}} ->
             Logger.info("Found IP: #{ip}")
             new_state = Map.merge(s, %{ip: ip, last_lookup: raw})
@@ -58,42 +52,65 @@ defmodule Dyndns.Amazon do
     {:reply, s[:last_lookup], s}
   end
 
-  def handle_cast(:new_ip, _from, s) do
-    # TODO: create a record set and upload to Route53
+  def handle_cast({:new_ip, new_ip}, s) do
+    Process.send(self(), {:upsert_record_set, new_ip}, [:noconnect])
+
+    {:noreply, s}
   end
 
-  defp lookup_ip(client, zone_id, hostname) do
-    case AWS.Route53.list_resource_record_sets(client, zone_id, nil, nil, "#{hostname}.", "A") do
-      {:ok, resp, _raw} ->
-        record_set =
-          get_in(resp, [
-            "ListResourceRecordSetsResponse",
-            "ResourceRecordSets",
-            "ResourceRecordSet"
-          ])
-          |> find_record_set(hostname)
+  def handle_info({:upsert_record_set, new_ip}, state) do
+    %{config: %{hosted_zone_id: hosted_zone_id}, hostname: hostname} = state
 
+    request =
+      ExAws.Route53.change_record_sets(hosted_zone_id,
+        comment: "Updated by dyndns at #{DateTime.utc_now()}",
+        batch: [
+          %{
+            action: :UPSERT,
+            name: "#{hostname}",
+            type: :A,
+            ttl: 60,
+            records: [new_ip]
+          }
+        ]
+      )
+
+    Logger.debug("Updating record set: #{inspect(request)}")
+
+    case ExAws.request(request) do
+      {:ok, %{body: body}} ->
+        Logger.info("Updated record set: #{inspect(body)}")
+        {:noreply, state}
+
+      {:error, reason} ->
+        Logger.error("Failed to update record set: #{inspect(reason)}")
+        {:noreply, state}
+    end
+  end
+
+  defp lookup_ip(zone_id, hostname) do
+    case ExAws.Route53.list_record_sets(zone_id, name: "#{hostname}.", type: :A)
+         |> ExAws.request() do
+      {:ok, %{body: body}} ->
+        record_set = body[:record_sets] |> find_record_set(hostname)
         Logger.debug("Found record set: #{inspect(record_set)}")
 
         {:ok,
          %{
-           ip: get_in(record_set, ["ResourceRecords", "ResourceRecord", "Value"]),
-           ttl: get_in(record_set, ["TTL"]),
+           ip: record_set[:values] |> List.first(),
+           ttl: record_set[:ttl],
            raw: record_set
          }}
 
-      _ ->
-        {:error, "Record Sets not found [#{zone_id}]"}
+      e ->
+        Logger.error("Failed to lookup record set: #{inspect(e)}")
+        {:error, "Record Sets not found [zone_id"}
     end
   end
 
   defp find_record_set(record_sets, hostname) do
     Enum.find(record_sets, fn record_set ->
-      record_set["Name"] == "#{hostname}." and record_set["Type"] == "A"
+      record_set[:name] == "#{hostname}." and record_set[:type] == "A"
     end)
-  end
-
-  defp update_record(record_set, new_value) do
-    put_in(record_set, ["ResourceRecords", "ResourceRecord", "Value"], new_value)
   end
 end

@@ -19,7 +19,6 @@ aws_access_key_id = Helpers.require_env_key("AWS_ACCESS_KEY_ID")
 aws_secret_access_key = Helpers.require_env_key("AWS_SECRET_ACCESS_KEY")
 hosted_zone_id = Helpers.require_env_key("HOSTED_ZONE_ID")
 
-
 config :dyndns, :aws, %{
   access_key_id: aws_access_key_id,
   secret_access_key: aws_secret_access_key,
@@ -29,3 +28,8 @@ config :dyndns, :aws, %{
 
 hostname = Helpers.require_env_key("HOSTNAME")
 config :dyndns, :hostname, hostname
+
+config :ex_aws,
+  access_key_id: [aws_access_key_id],
+  secret_access_key: [aws_secret_access_key],
+  region: "us-east-1"

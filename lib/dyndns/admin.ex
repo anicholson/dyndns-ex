@@ -5,6 +5,7 @@ defmodule Dyndns.Admin do
   Listening on port 4000 by default (not currently configurable)
   """
   alias Plug.Conn
+
   defmodule Plug do
     @moduledoc false
     import Conn
