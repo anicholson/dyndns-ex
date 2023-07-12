@@ -1,21 +1,13 @@
-# Dyndns
+# dyndns
 
-**TODO: Add description**
+A barebones Dynamic DNS client that reports to AWS Route53, written in Elixir.
+Untested, works-for-me software.
 
-## Installation
+## Usage via Docker
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `dyndns` to your list of dependencies in `mix.exs`:
+To run this via Docker do the following:
 
-```elixir
-def deps do
-  [
-    {:dyndns, "~> 0.1.0"}
-  ]
-end
+```bash
+$ docker build -it dyndns .
+$ docker run --name dyndns -e HOSTNAME={your hostname} -e HOSTED_ZONE_ID={the hosted zone id from Route53} -e AWS_ACCESS_KEY_ID={your AWS key} -e AWS_SECRET_ACCESS_KEY={your AWS secret key}
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/dyndns>.
-
