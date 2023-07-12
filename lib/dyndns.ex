@@ -7,8 +7,8 @@ defmodule Dyndns do
     GenServer.call(Dyndns.Wan, :update)
   end
 
-  def wan_state do
-    GenServer.call(Dyndns.Wan, :state)
+  def wan_status do
+    GenServer.call(Dyndns.Wan, :status)
   end
 
   def lookup_record do

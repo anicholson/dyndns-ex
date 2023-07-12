@@ -13,7 +13,7 @@ defmodule Dyndns.Admin do
     def init(opts), do: opts
 
     def call(conn, _opts) do
-      current_state = Dyndns.wan_state()
+      current_state = Dyndns.wan_status()
 
       conn
       |> put_resp_content_type("application/json")

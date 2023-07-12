@@ -12,18 +12,26 @@ defmodule Dyndns.Amazon do
   When casting this module, you can ask it to:
     * update the IP address for the configured hostname (see `config/runtime.exs`)
   """
-  require Logger
   use GenServer
+  use Logs
+
+  @module "Amazon"
 
   def start_link(config) do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
-  @type t :: %{access_key_id: String.t(), secret_access_key: String.t(), region: String.t()}
+  @type init :: %{hostname: String.t(), hosted_zone_id: String.t()}
+  @type state :: %{
+          hostname: String.t(),
+          hosted_zone_id: String.t(),
+          ip: String.t() | nil,
+          last_lookup: DateTime.t() | nil
+        }
 
-  @spec init({String.t(), t()}) :: {:ok, any()}
-  def init({hostname}) do
-    {:ok, %{hostname: hostname, ip: nil, last_lookup: nil}}
+  @spec init(init()) :: {:ok, state()}
+  def init(%{hostname: hostname, hosted_zone_id: hosted_zone_id}) do
+    {:ok, %{hostname: hostname, hosted_zone_id: hosted_zone_id, ip: nil, last_lookup: nil}}
   end
 
   def handle_call(:lookup, _from, s) do
@@ -32,17 +40,17 @@ defmodule Dyndns.Amazon do
         {:reply, ip, s}
 
       _ ->
-        Logger.info("Looking up hostname")
-        %{config: %{hosted_zone_id: hosted_zone_id}, hostname: hostname} = s
+        info("Looking up hostname")
+        %{hosted_zone_id: hosted_zone_id, hostname: hostname} = s
 
         case lookup_ip(hosted_zone_id, hostname) do
           {:ok, %{ip: ip, raw: raw}} ->
-            Logger.info("Found IP: #{ip}")
+            info("Found IP: #{ip}")
             new_state = Map.merge(s, %{ip: ip, last_lookup: raw})
             {:reply, ip, new_state}
 
           {:error, reason} ->
-            Logger.error("Failed to lookup IP: #{inspect(reason)}")
+            error("Failed to lookup IP: #{inspect(reason)}")
             {:reply, nil, s}
         end
     end
@@ -75,15 +83,15 @@ defmodule Dyndns.Amazon do
         ]
       )
 
-    Logger.debug("Updating record set: #{inspect(request)}")
+    debug("Updating record set: #{inspect(request)}")
 
     case ExAws.request(request) do
       {:ok, %{body: body}} ->
-        Logger.info("Updated record set: #{inspect(body)}")
+        info("Updated record set: #{inspect(body)}")
         {:noreply, state}
 
       {:error, reason} ->
-        Logger.error("Failed to update record set: #{inspect(reason)}")
+        error("Failed to update record set: #{inspect(reason)}")
         {:noreply, state}
     end
   end
@@ -93,7 +101,7 @@ defmodule Dyndns.Amazon do
          |> ExAws.request() do
       {:ok, %{body: body}} ->
         record_set = body[:record_sets] |> find_record_set(hostname)
-        Logger.debug("Found record set: #{inspect(record_set)}")
+        debug("Found record set: #{inspect(record_set)}")
 
         {:ok,
          %{
@@ -103,7 +111,7 @@ defmodule Dyndns.Amazon do
          }}
 
       e ->
-        Logger.error("Failed to lookup record set: #{inspect(e)}")
+        error("Failed to lookup record set: #{inspect(e)}")
         {:error, "Record Sets not found [zone_id"}
     end
   end

@@ -9,7 +9,8 @@ defmodule Dyndns.Application do
   def start(_type, _args) do
     children = [
       {Dyndns.Wan, []},
-      {Dyndns.Amazon, {Dyndns.hostname()}},
+      {Dyndns.Amazon, Application.get_env(:dyndns, :amazon)},
+      {Dyndns.Timer, []},
       {Bandit, plug: Dyndns.Admin.Plug}
     ]
 

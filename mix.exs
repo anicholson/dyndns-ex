@@ -25,7 +25,7 @@ defmodule Dyndns.MixProject do
       # Route 53 reporting
       {:ex_aws, "~> 2.4"},
       {:ex_aws_route53, "~> 2.0"},
-
+      {:sweet_xml, "~> 0.6"},
       # WAN lookup
       {:hackney, "~> 1.18"},
       {:httpoison, "~> 2.1"},
